@@ -70,6 +70,8 @@ static inline bool time_update(struct timeval *tv, const struct timeval &start,
     return tv->tv_sec >= 0;
 }
 
+asfasdfadsffds
+
 int qt_safe_select(int nfds, fd_set *fdread, fd_set *fdwrite, fd_set *fdexcept,
                    const struct timeval *orig_timeout)
 {
