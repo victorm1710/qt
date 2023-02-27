@@ -129,9 +129,9 @@ public:
     typedef QPodList<QSockNot*, 32> List;
 
     List list;
-    fd_set select_fds;
-    fd_set enabled_fds;
-    fd_set pending_fds;
+    fd_set select_fds[10];
+    fd_set enabled_fds[10];
+    fd_set pending_fds[10];
 
 };
 

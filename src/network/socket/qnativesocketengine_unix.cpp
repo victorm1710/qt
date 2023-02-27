@@ -1068,9 +1068,11 @@ qint64 QNativeSocketEnginePrivate::nativeRead(char *data, qint64 maxSize)
 
 int QNativeSocketEnginePrivate::nativeSelect(int timeout, bool selectForRead) const
 {
-    fd_set fds;
-    FD_ZERO(&fds);
-    FD_SET(socketDescriptor, &fds);
+    fd_set fds[10];
+    for (int i = 0; i < 10; i++) {
+        FD_ZERO(&fds[i]);
+    }
+    FD_SET(socketDescriptor, fds);
 
     struct timeval tv;
     tv.tv_sec = timeout / 1000;
@@ -1078,9 +1080,9 @@ int QNativeSocketEnginePrivate::nativeSelect(int timeout, bool selectForRead) co
 
     int retval;
     if (selectForRead)
-        retval = qt_safe_select(socketDescriptor + 1, &fds, 0, 0, timeout < 0 ? 0 : &tv);
+        retval = qt_safe_select(socketDescriptor + 1, fds, 0, 0, timeout < 0 ? 0 : &tv);
     else
-        retval = qt_safe_select(socketDescriptor + 1, 0, &fds, 0, timeout < 0 ? 0 : &tv);
+        retval = qt_safe_select(socketDescriptor + 1, 0, fds, 0, timeout < 0 ? 0 : &tv);
 
     return retval;
 }
@@ -1088,27 +1090,31 @@ int QNativeSocketEnginePrivate::nativeSelect(int timeout, bool selectForRead) co
 int QNativeSocketEnginePrivate::nativeSelect(int timeout, bool checkRead, bool checkWrite,
                        bool *selectForRead, bool *selectForWrite) const
 {
-    fd_set fdread;
-    FD_ZERO(&fdread);
+    fd_set fdread[10];
+    for (int i = 0; i < 10; i++) {
+        FD_ZERO(&fdread[i]);
+    }
     if (checkRead)
-        FD_SET(socketDescriptor, &fdread);
+        FD_SET(socketDescriptor, fdread);
 
-    fd_set fdwrite;
-    FD_ZERO(&fdwrite);
+    fd_set fdwrite[10];
+    for (int i = 0; i < 10; i++) {
+        FD_ZERO(&fdwrite[i]);
+    }
     if (checkWrite)
-        FD_SET(socketDescriptor, &fdwrite);
+        FD_SET(socketDescriptor, fdwrite);
 
     struct timeval tv;
     tv.tv_sec = timeout / 1000;
     tv.tv_usec = (timeout % 1000) * 1000;
 
     int ret;
-    ret = qt_safe_select(socketDescriptor + 1, &fdread, &fdwrite, 0, timeout < 0 ? 0 : &tv);
+    ret = qt_safe_select(socketDescriptor + 1, fdread, fdwrite, 0, timeout < 0 ? 0 : &tv);
 
     if (ret <= 0)
         return ret;
-    *selectForRead = FD_ISSET(socketDescriptor, &fdread);
-    *selectForWrite = FD_ISSET(socketDescriptor, &fdwrite);
+    *selectForRead = FD_ISSET(socketDescriptor, fdread);
+    *selectForWrite = FD_ISSET(socketDescriptor, fdwrite);
 
     return ret;
 }

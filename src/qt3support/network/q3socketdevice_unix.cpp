@@ -588,19 +588,19 @@ Q_LONG Q3SocketDevice::waitForMore( int msecs, bool *timeout ) const
 {
     if ( !isValid() )
 	return -1;
-    if ( fd >= FD_SETSIZE )
-	return -1;
 
-    fd_set fds;
+	fd_set fds[10];
+    for (int i = 0; i < 10; i++) {
+        FD_ZERO(&fds[i]);
+    }
     struct timeval tv;
 
-    FD_ZERO( &fds );
-    FD_SET( fd, &fds );
+    FD_SET( fd, fds );
 
     tv.tv_sec = msecs / 1000;
     tv.tv_usec = (msecs % 1000) * 1000;
 
-    int rv = select( fd+1, &fds, 0, 0, msecs < 0 ? 0 : &tv );
+    int rv = select( fd+1, fds, 0, 0, msecs < 0 ? 0 : &tv );
 
     if ( rv < 0 )
 	return -1;

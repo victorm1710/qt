@@ -1473,10 +1473,12 @@ bool QUnixSocket::waitForReadyRead(int msecs)
 
     do
     {
-        fd_set readset;
+        fd_set readset[10];
+        for (int i = 0; i < 10; i++) {
+            FD_ZERO(&readset[i]);
+        }
 
-        FD_ZERO(&readset);
-        FD_SET(d->fd, &readset);
+        FD_SET(d->fd, readset);
 
         if(-1 != msecs) {
             tv.tv_sec = timeout / 1000;
@@ -1484,7 +1486,7 @@ bool QUnixSocket::waitForReadyRead(int msecs)
             ptrTv = &tv;
         }
 
-        int rv = ::select(d->fd + 1, &readset, 0, 0, ptrTv);
+        int rv = ::select(d->fd + 1, readset, 0, 0, ptrTv);
         switch(rv) {
             case 0:
                 // timeout
@@ -1521,9 +1523,11 @@ bool QUnixSocket::waitForBytesWritten(int msecs)
 
     while ( true )
     {
-        fd_set fdwrite;
-        FD_ZERO(&fdwrite);
-        FD_SET(d->fd, &fdwrite);
+        fd_set fdwrite[10];
+        for (int i = 0; i < 10; i++) {
+            FD_ZERO(&fdwrite[i]);
+        }
+        FD_SET(d->fd, fdwrite);
         int timeout = msecs < 0 ? 0 : msecs - stopWatch.elapsed();
         struct timeval tv;
         struct timeval *ptrTv = 0;
@@ -1534,7 +1538,7 @@ bool QUnixSocket::waitForBytesWritten(int msecs)
             ptrTv = &tv;
         }
 
-        int rv = ::select(d->fd + 1, 0, &fdwrite, 0, ptrTv);
+        int rv = ::select(d->fd + 1, 0, fdwrite, 0, ptrTv);
         switch ( rv )
         {
             case 0:

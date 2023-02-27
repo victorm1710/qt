@@ -980,14 +980,16 @@ bool Q3Process::isRunning() const
 
 	// On heavy processing, the socket notifier for the sigchild might not
 	// have found time to fire yet.
-	if ( d->procManager && d->procManager->sigchldFd[1] < FD_SETSIZE ) {
-	    fd_set fds;
+	if ( d->procManager ) {
+		fd_set fds[10];
+		for (int i = 0; i < 10; i++) {
+			FD_ZERO(&fds[i]);
+		}
 	    struct timeval tv;
-	    FD_ZERO( &fds );
-	    FD_SET( d->procManager->sigchldFd[1], &fds );
+	    FD_SET( d->procManager->sigchldFd[1], fds );
 	    tv.tv_sec = 0;
 	    tv.tv_usec = 0;
-	    if ( ::select( d->procManager->sigchldFd[1]+1, &fds, 0, 0, &tv ) > 0 )
+	    if ( ::select( d->procManager->sigchldFd[1]+1, fds, 0, 0, &tv ) > 0 )
 		d->procManager->sigchldHnd( d->procManager->sigchldFd[1] );
 	}
 
@@ -1125,16 +1127,20 @@ void Q3Process::socketRead( int fd )
     }
 
     if ( fd < FD_SETSIZE ) {
-	fd_set fds;
+	fd_set fds[10];
+    for (int i = 0; i < 10; i++) {
+        FD_ZERO(&fds[i]);
+    }
 	struct timeval tv;
-	FD_ZERO( &fds );
-	FD_SET( fd, &fds );
+	FD_SET( fd, fds );
 	tv.tv_sec = 0;
 	tv.tv_usec = 0;
-	while ( ::select( fd+1, &fds, 0, 0, &tv ) > 0 ) {
+	while ( ::select( fd+1, fds, 0, 0, &tv ) > 0 ) {
 	    // prepare for the next round
-	    FD_ZERO( &fds );
-	    FD_SET( fd, &fds );
+	    for (int i = 0; i < 10; i++) {
+			FD_ZERO(&fds[i]);
+		}
+	    FD_SET( fd, fds );
 	    // read data
 	    ba = new QByteArray( basize );
 	    n = ::read( fd, ba->data(), basize );
